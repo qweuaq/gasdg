@@ -1,10 +1,38 @@
 # AM-AM VPN
 
-VPN-приложение с графическим интерфейсом.
+Десктопное VPN-приложение на **Electron**. Запускается как обычная программа на Windows, macOS и Linux.
 
 ## 🚀 Запуск
 
-Откройте файл `am-am-vpn/index.html` в браузере.
+### 1. Установить зависимости
+
+```bash
+cd am-am-vpn
+npm install
+```
+
+### 2. Запустить приложение
+
+```bash
+npm start
+```
+
+Откроется отдельное окно приложения AM-AM VPN.
+
+### 3. Собрать установщик (опционально)
+
+```bash
+# Windows (.exe)
+npm run build:win
+
+# macOS (.dmg)
+npm run build:mac
+
+# Linux (.AppImage)
+npm run build:linux
+```
+
+Готовые файлы появятся в папке `am-am-vpn/dist/`.
 
 ## 📱 Возможности
 
@@ -14,18 +42,26 @@ VPN-приложение с графическим интерфейсом.
 - **Фильтры сайтов** — YouTube, Discord, Instagram, Twitter/X
 - **Настройки безопасности** — Kill Switch, DNS защита, блокировка рекламы
 - **Профиль пользователя** — регистрация, вход, аватар, выбор языка
-- **Сохранение сессии** — данные аккаунта сохраняются в localStorage
+- **Сохранение сессии** — данные аккаунта сохраняются локально
 
 ## 📁 Структура
 
 ```
 am-am-vpn/
-└── index.html          — основной файл приложения (HTML + CSS + JS)
+├── package.json        — зависимости и скрипты сборки
+├── main.js             — главный процесс Electron (окно приложения)
+├── preload.js          — безопасный мост между Node.js и UI
+├── index.html          — интерфейс приложения (HTML + CSS + JS)
+└── .gitignore          — исключения для node_modules и dist
 ```
 
 ## 🛠 Технологии
 
-- HTML5
-- CSS3 (анимации, градиенты, backdrop-filter)
-- JavaScript (localStorage, DOM API)
-- Адаптивный дизайн (max-width: 480px для мобильных)
+- **Electron** — десктопное приложение
+- HTML5 / CSS3 / JavaScript — интерфейс
+- electron-builder — сборка установщиков (.exe, .dmg, .AppImage)
+
+## 💻 Требования
+
+- **Node.js** 18+ — [скачать](https://nodejs.org/)
+- **npm** (идёт вместе с Node.js)
