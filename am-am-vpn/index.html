@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AM-AM VPN</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #0a0a14;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            max-width: 480px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #0a0a14 0%, #0d1117 50%, #0a0a14 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.65);
+            text-align: center;
+            z-index: 5;
+            flex-shrink: 0;
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header .logout-btn {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: none;
+        }
+
+        .header .logout-btn.show {
+            display: block;
+        }
+
+        .header .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ===== CONNECT BUTTON ZONE ===== */
+        .trigger-zone {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+            z-index: 4;
+            flex-shrink: 0;
+        }
+
+        .connect-btn {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .connect-btn::before {
+            content: '';
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.9); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+
+        .connect-btn .power-icon {
+            font-size: 48px;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.4s ease;
+            line-height: 1;
+        }
+
+        .connect-btn.connecting {
+            border-color: rgba(255, 200, 0, 0.6);
+            background: rgba(255, 200, 0, 0.1);
+            animation: connecting-pulse 1s ease-in-out infinite;
+        }
+
+        .connect-btn.connecting .power-icon {
+            color: rgba(255, 200, 0, 0.9);
+        }
+
+        .connect-btn.connecting::before {
+            border-color: rgba(255, 200, 0, 0.3);
+        }
+
+        @keyframes connecting-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .connect-btn.connected {
+            border-color: rgba(0, 255, 100, 0.6);
+            background: rgba(0, 255, 100, 0.1);
+            box-shadow: 0 0 30px rgba(0, 255, 100, 0.2);
+        }
+
+        .connect-btn.connected .power-icon {
+            color: #00ff64;
+        }
+
+        .connect-btn.connected::before {
+            border-color: rgba(0, 255, 100, 0.2);
+        }
+
+        .connect-label {
+            position: absolute;
+            bottom: 10px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.4s;
+        }
+
+        .trigger-zone.connected .connect-label {
+            color: rgba(0, 255, 100, 0.6);
+        }
+
+        /* ===== SCREENS ===== */
+        .screen {
+            display: none;
+            position: absolute;
+            top: 56px;
+            left: 0;
+            right: 0;
+            bottom: 56px;
+            flex-direction: column;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* ===== MAIN SCREEN ===== */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 20px 20px;
+            gap: 20px;
+            z-index: 2;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        .status-display {
+            background: rgba(255, 100, 100, 0.15);
+            border: 1px solid rgba(255, 100, 100, 0.25);
+            border-radius: 12px;
+            padding: 12px 24px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 600;
+            color: #ff6b6b;
+            width: 80%;
+            max-width: 280px;
+            transition: all 0.4s ease;
+        }
+
+        .status-display.connected {
+            background: rgba(0, 255, 100, 0.15);
+            border-color: rgba(0, 255, 100, 0.25);
+            color: #00ff64;
+        }
+
+        /* ===== STATS ===== */
+        .stats-row {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* ===== SERVER SELECTOR ===== */
+        .server-section {
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .server-button {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 14px 16px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .server-button:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .server-button-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .server-flag {
+            font-size: 22px;
+        }
+
+        .server-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .server-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .server-ping {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .server-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 20, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 50;
+            backdrop-filter: blur(20px);
+        }
+
+        .server-dropdown.show {
+            display: block;
+        }
+
+        .server-option {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .server-option:last-child {
+            border-bottom: none;
+        }
+
+        .server-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .server-option.selected {
+            background: rgba(0, 255, 100, 0.1);
+            color: #00ff64;
+        }
+
+        .server-option-info {
+            flex: 1;
+        }
+
+        .server-option-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .server-option-ping {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .server-option-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff64;
+            flex-shrink: 0;
+        }
+
+        .server-option-dot.medium {
+            background: #ffc107;
+        }
+
+        .server-option-dot.slow {
+            background: #ff6b6b;
+        }
+
+        /* ===== FILTERS SCREEN ===== */
+        .filters-screen, .profile-screen {
+            flex-direction: column;
+            padding: 20px 16px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            gap: 16px;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .section h3 {
+            font-size: 13px;
+            margin: 0 0 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .menu-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            color: white;
+            position: relative;
+        }
+
+        .menu-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .menu-item.button {
+            background: linear-gradient(135deg, #00ff64, #00cc44);
+            color: #000;
+            font-weight: bold;
+            justify-content: center;
+            border: none;
+            padding: 12px 20px;
+        }
+
+        .menu-item.button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 255, 100, 0.3);
+        }
+
+        .menu-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .menu-content {
+            flex: 1;
+        }
+
+        .menu-title {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .menu-value {
+            margin: 3px 0 0;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* ===== TOGGLE SWITCH ===== */
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background: #00ff64;
+        }
+
+        .toggle input:checked + .toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        /* ===== PROFILE SCREEN ===== */
+        .profile-header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .profile-logged-out {
+            display: none;
+            text-align: center;
+        }
+
+        .profile-logged-out.show {
+            display: block;
+        }
+
+        .profile-logged-in {
+            display: none;
+        }
+
+        .profile-logged-in.show {
+            display: block;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #00ff64, #00cc44);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 16px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 255, 100, 0.3);
+        }
+
+        .avatar-container {
+            position: relative;
+            width: fit-content;
+            margin: 0 auto 12px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #00ff64, #00cc44);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-upload {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            width: 28px;
+            height: 28px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(0, 255, 100, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .avatar-upload input {
+            display: none;
+        }
+
+        .profile-id {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            margin: 0 0 8px;
+            text-align: center;
+        }
+
+        .profile-tariff {
+            background: rgba(0, 255, 100, 0.08);
+            border: 1px solid rgba(0, 255, 100, 0.15);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 0 0 16px;
+            font-size: 12px;
+            color: #00ff64;
+            text-align: center;
+        }
+
+        .profile-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 16px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: white;
+            width: 100%;
+        }
+
+        .profile-name:focus {
+            outline: none;
+            border-color: rgba(0, 255, 100, 0.4);
+        }
+
+        .profile-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .profile-section.settings {
+            gap: 0;
+        }
+
+        /* ===== LANGUAGE DROPDOWN ===== */
+        .lang-dropdown {
+            position: relative;
+        }
+
+        .lang-menu {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 20, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            backdrop-filter: blur(20px);
+        }
+
+        .lang-menu.show {
+            display: block;
+        }
+
+        .lang-option {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .lang-option:last-child {
+            border-bottom: none;
+        }
+
+        .lang-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .lang-option.active {
+            background: rgba(0, 255, 100, 0.1);
+            color: #00ff64;
+        }
+
+        .lang-flag {
+            font-size: 18px;
+        }
+
+        .lang-name {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* ===== BOTTOM NAV ===== */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: rgba(0,0,0,0.7);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            flex-shrink: 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.35);
+            cursor: pointer;
+            font-size: 11px;
+            padding: 6px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: color 0.2s;
+            width: 70px;
+            text-align: center;
+            position: relative;
+            border-radius: 12px;
+        }
+
+        .nav-btn:hover {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .nav-btn.active {
+            color: #00ff64;
+        }
+
+        .nav-icon {
+            font-size: 22px;
+        }
+
+        /* ===== MODALS ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(15, 15, 25, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 28px;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 20px;
+            text-align: center;
+            padding-right: 32px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+
+        .modal-input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: rgba(0, 255, 100, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .modal-input-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .modal-error {
+            color: #ff6b6b;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 4px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 13px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #00ff64, #00cc44);
+            color: #000;
+        }
+
+        .modal-btn-confirm:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 255, 100, 0.3);
+        }
+
+        .modal-btn-cancel {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .modal-btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .confirmation-text {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .confirmation-field {
+            margin-bottom: 6px;
+        }
+
+        .confirmation-label {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+        }
+
+        .confirmation-value {
+            color: #00ff64;
+            font-weight: 600;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .bg-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bg-particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(0, 255, 100, 0.3);
+            border-radius: 50%;
+            animation: float-up linear infinite;
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        /* ===== TIMER ===== */
+        .timer-display {
+            font-size: 28px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 2px;
+            font-variant-numeric: tabular-nums;
+            transition: color 0.4s;
+        }
+
+        .timer-display.active {
+            color: #00ff64;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="bg-particles" id="bgParticles"></div>
+
+        <div class="header">
+            <h1 id="headerTitle">AM-AM VPN</h1>
+            <button class="logout-btn" id="logoutBtn">Выход</button>
+        </div>
+
+        <!-- ===== MAIN SCREEN ===== -->
+        <div class="content screen active" id="mainScreen">
+            <div class="trigger-zone" id="triggerZone">
+                <div class="connect-btn" id="connectBtn">
+                    <span class="power-icon">⏻</span>
+                </div>
+                <span class="connect-label" id="connectLabel">Нажмите для подключения</span>
+            </div>
+
+            <div class="status-display" id="statusDisplay">
+                🔒 Отключено
+            </div>
+
+            <div class="timer-display" id="timerDisplay">00:00:00</div>
+
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-label">Загрузка</div>
+                    <div class="stat-value" id="downloadSpeed">0 MB/s</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Отдача</div>
+                    <div class="stat-value" id="uploadSpeed">0 MB/s</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Пинг</div>
+                    <div class="stat-value" id="pingDisplay">-- ms</div>
+                </div>
+            </div>
+
+            <!-- SERVER SELECTOR -->
+            <div class="server-section" id="serverSection">
+                <button class="server-button" id="serverBtn">
+                    <div class="server-button-content">
+                        <span class="server-flag" id="serverFlag">🇩🇪</span>
+                        <div class="server-info">
+                            <span class="server-name" id="serverName">Берлин</span>
+                            <span class="server-ping" id="serverPing">42 ms</span>
+                        </div>
+                    </div>
+                    <span style="font-size: 12px; color: rgba(255,255,255,0.3);">▼</span>
+                </button>
+
+                <div class="server-dropdown" id="serverDropdown">
+                    <div class="server-option selected" data-server="berlin" data-flag="🇩🇪" data-ping="42">
+                        <span class="server-flag">🇩🇪</span>
+                        <div class="server-option-info">
+                            <div class="server-option-name">Берлин</div>
+                            <div class="server-option-ping">42 ms</div>
+                        </div>
+                        <span class="server-option-dot"></span>
+                    </div>
+                    <div class="server-option" data-server="amsterdam" data-flag="🇳🇱" data-ping="38">
+                        <span class="server-flag">🇳🇱</span>
+                        <div class="server-option-info">
+                            <div class="server-option-name">Амстердам</div>
+                            <div class="server-option-ping">38 ms</div>
+                        </div>
+                        <span class="server-option-dot"></span>
+                    </div>
+                    <div class="server-option" data-server="newyork" data-flag="🇺🇸" data-ping="120">
+                        <span class="server-flag">🇺🇸</span>
+                        <div class="server-option-info">
+                            <div class="server-option-name">Нью-Йорк</div>
+                            <div class="server-option-ping">120 ms</div>
+                        </div>
+                        <span class="server-option-dot medium"></span>
+                    </div>
+                    <div class="server-option" data-server="tokyo" data-flag="🇯🇵" data-ping="180">
+                        <span class="server-flag">🇯🇵</span>
+                        <div class="server-option-info">
+                            <div class="server-option-name">Токио</div>
+                            <div class="server-option-ping">180 ms</div>
+                        </div>
+                        <span class="server-option-dot slow"></span>
+                    </div>
+                    <div class="server-option" data-server="london" data-flag="🇬🇧" data-ping="55">
+                        <span class="server-flag">🇬🇧</span>
+                        <div class="server-option-info">
+                            <div class="server-option-name">Лондон</div>
+                            <div class="server-option-ping">55 ms</div>
+                        </div>
+                        <span class="server-option-dot"></span>
+                    </div>
+                    <div class="server-option" data-server="singapore" data-flag="🇸🇬" data-ping="210">
+                        <span class="server-flag">🇸🇬</span>
+                        <div class="server-option-info">
+                            <div class="server-option-name">Сингапур</div>
+                            <div class="server-option-ping">210 ms</div>
+                        </div>
+                        <span class="server-option-dot slow"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== FILTERS SCREEN ===== -->
+        <div class="filters-screen screen" id="filtersScreen">
+            <div class="section">
+                <h3>Сайты</h3>
+                <div class="menu-item">
+                    <span class="menu-icon">🎬</span>
+                    <div class="menu-content">
+                        <p class="menu-title">YouTube</p>
+                        <p class="menu-value">Видео и стримы</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-icon">💬</span>
+                    <div class="menu-content">
+                        <p class="menu-title">Discord</p>
+                        <p class="menu-value">Чат и голос</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-icon">📸</span>
+                    <div class="menu-content">
+                        <p class="menu-title">Instagram</p>
+                        <p class="menu-value">Фото и сторис</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-icon">🐦</span>
+                    <div class="menu-content">
+                        <p class="menu-title">Twitter / X</p>
+                        <p class="menu-value">Посты и медиа</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Настройки</h3>
+                <div class="menu-item">
+                    <span class="menu-icon">🔐</span>
+                    <div class="menu-content">
+                        <p class="menu-title">Kill Switch</p>
+                        <p class="menu-value">Блокировка при обрыве</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-icon">🛡️</span>
+                    <div class="menu-content">
+                        <p class="menu-title">DNS защита</p>
+                        <p class="menu-value">Блокировка утечек DNS</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="menu-item">
+                    <span class="menu-icon">🚫</span>
+                    <div class="menu-content">
+                        <p class="menu-title">Блокировка рекламы</p>
+                        <p class="menu-value">Встроенный AdBlock</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PROFILE SCREEN ===== -->
+        <div class="profile-screen screen" id="profileScreen">
+            <!-- LOGGED OUT -->
+            <div class="profile-header profile-logged-out show">
+                <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
+                <p style="color: rgba(255,255,255,0.5); margin-bottom: 20px; font-size: 14px;">Войдите, чтобы управлять аккаунтом</p>
+                <button class="login-btn" id="openAuthBtn">Вход / Регистрация</button>
+            </div>
+
+            <!-- LOGGED IN -->
+            <div class="profile-header profile-logged-in">
+                <div class="avatar-container">
+                    <div class="avatar" id="avatar">👤</div>
+                    <label class="avatar-upload">
+                        <input type="file" id="avatarInput" accept="image/*">
+                        <span>📷</span>
+                    </label>
+                </div>
+
+                <p class="profile-id" id="profileId">ID: 12345678</p>
+                <p class="profile-tariff" id="profileTariff">💳 Тариф: Free</p>
+
+                <input type="text" id="profileName" class="profile-name" placeholder="Введите ник" value="Пользователь">
+            </div>
+
+            <!-- SOCIAL & TARIFF -->
+            <div class="profile-section">
+                <a href="#" class="menu-item button" onclick="return false;">
+                    <span class="menu-icon">📱</span>
+                    <span class="menu-title">Наш Telegram канал</span>
+                </a>
+
+                <a href="#" class="menu-item button" onclick="return false;">
+                    <span class="menu-icon">💳</span>
+                    <span class="menu-title">Купить Premium</span>
+                </a>
+            </div>
+
+            <!-- SETTINGS -->
+            <div class="profile-section settings">
+                <div class="menu-item">
+                    <span class="menu-icon">💻</span>
+                    <div class="menu-content">
+                        <p class="menu-title">Мои устройства</p>
+                        <p class="menu-value">1/2</p>
+                    </div>
+                </div>
+
+                <div class="menu-item lang-dropdown" id="langDropdown">
+                    <span class="menu-icon">🌐</span>
+                    <div class="menu-content">
+                        <p class="menu-title">Язык</p>
+                        <p class="menu-value" id="langValue">Русский</p>
+                    </div>
+
+                    <div class="lang-menu" id="langMenu">
+                        <div class="lang-option active" data-lang="ru">
+                            <span class="lang-flag">🇷🇺</span>
+                            <span class="lang-name">Русский</span>
+                        </div>
+                        <div class="lang-option" data-lang="en">
+                            <span class="lang-flag">🇺🇸</span>
+                            <span class="lang-name">English</span>
+                        </div>
+                        <div class="lang-option" data-lang="de">
+                            <span class="lang-flag">🇩🇪</span>
+                            <span class="lang-name">Deutsch</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-item" style="margin-top: 10px; border-color: rgba(255,100,100,0.2);">
+                    <span class="menu-icon">🗑️</span>
+                    <div class="menu-content">
+                        <p class="menu-title" style="color: #ff6b6b;">Удалить аккаунт</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== AUTH MODAL ===== -->
+        <div class="modal" id="authModal">
+            <div class="modal-content">
+                <button class="modal-close" id="authModalClose">✕</button>
+
+                <!-- REGISTER -->
+                <div id="registerForm">
+                    <h2 class="modal-title">Регистрация</h2>
+
+                    <div class="form-group">
+                        <label class="modal-input-label">Ник</label>
+                        <input type="text" class="modal-input" id="regNick" placeholder="Ваш никнейм" maxlength="20" autocomplete="username">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="modal-input-label">ID (8 цифр)</label>
+                        <input type="text" class="modal-input" id="regId" placeholder="12345678" maxlength="8" inputmode="numeric" autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="modal-input-label">Дата рождения</label>
+                        <input type="date" class="modal-input" id="regBirthday">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="modal-input-label">Пароль</label>
+                        <input type="password" class="modal-input" id="regPassword" placeholder="Минимум 6 символов" minlength="6" autocomplete="new-password">
+                    </div>
+
+                    <div class="modal-error" id="regError"></div>
+
+                    <div class="modal-buttons" style="margin-bottom: 12px;">
+                        <button class="modal-btn modal-btn-confirm" id="registerBtn" style="flex: 1;">Создать аккаунт</button>
+                    </div>
+
+                    <div style="text-align: center; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);">
+                        <button id="toggleLoginBtn" style="background: none; border: none; color: #00ff64; cursor: pointer; font-size: 13px; margin-top: 8px;">Уже есть аккаунт? Войти</button>
+                    </div>
+                </div>
+
+                <!-- LOGIN -->
+                <div id="loginForm" style="display: none;">
+                    <h2 class="modal-title">Вход</h2>
+
+                    <div class="form-group">
+                        <label class="modal-input-label">ID</label>
+                        <input type="text" class="modal-input" id="loginId" placeholder="Ваш ID" maxlength="8" inputmode="numeric" autocomplete="username">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="modal-input-label">Пароль</label>
+                        <input type="password" class="modal-input" id="loginPassword" placeholder="Ваш пароль" autocomplete="current-password">
+                    </div>
+
+                    <div class="modal-error" id="loginError"></div>
+
+                    <div class="modal-buttons">
+                        <button class="modal-btn modal-btn-confirm" id="loginBtn" style="flex: 1;">Войти</button>
+                    </div>
+
+                    <div style="text-align: center; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);">
+                        <button id="toggleRegisterBtn" style="background: none; border: none; color: #00ff64; cursor: pointer; font-size: 13px; margin-top: 8px;">Нет аккаунта? Создать</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== CONFIRM MODAL ===== -->
+        <div class="modal" id="confirmModal">
+            <div class="modal-content">
+                <h2 class="modal-title" style="padding-right: 0;">Подтвердите данные</h2>
+
+                <div class="confirmation-text">
+                    <div class="confirmation-field">
+                        <span class="confirmation-label">Ник: </span>
+                        <span class="confirmation-value" id="confirmNick"></span>
+                    </div>
+                    <div class="confirmation-field">
+                        <span class="confirmation-label">ID: </span>
+                        <span class="confirmation-value" id="confirmId"></span>
+                    </div>
+                    <div class="confirmation-field">
+                        <span class="confirmation-label">Дата рождения: </span>
+                        <span class="confirmation-value" id="confirmBirthday"></span>
+                    </div>
+                    <div class="confirmation-field">
+                        <span class="confirmation-label">Пароль: </span>
+                        <span class="confirmation-value">••••••</span>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button class="modal-btn modal-btn-cancel" id="confirmCancelBtn" style="flex: 1;">Отмена</button>
+                    <button class="modal-btn modal-btn-confirm" id="confirmOkBtn" style="flex: 1;">Подтвердить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== BOTTOM NAV ===== -->
+        <div class="bottom-nav">
+            <button class="nav-btn active" data-screen="mainScreen">
+                <span class="nav-icon">🏠</span>
+                <span>Главная</span>
+            </button>
+            <button class="nav-btn" data-screen="filtersScreen">
+                <span class="nav-icon">⚙️</span>
+                <span>Настройки</span>
+            </button>
+            <button class="nav-btn" data-screen="profileScreen">
+                <span class="nav-icon">👤</span>
+                <span>Профиль</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ===== STATE =====
+        const STORAGE_KEY = 'am_am_vpn_accounts';
+        const SESSION_KEY = 'am_am_vpn_session';
+
+        let connected = false;
+        let isConnecting = false;
+        let isLoggedIn = false;
+        let currentUser = null;
+        let allAccounts = [];
+        let connectionTimer = null;
+        let connectionSeconds = 0;
+        let statsInterval = null;
+
+        // ===== HASHING =====
+        async function hashPassword(password) {
+            var encoder = new TextEncoder();
+            var data = encoder.encode(password);
+            var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            var hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+        }
+
+        // ===== STORAGE =====
+        function loadAccounts() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    var parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed)) {
+                        allAccounts = parsed.filter(function(acc) {
+                            return acc && typeof acc.id === 'string' && typeof acc.nick === 'string';
+                        });
+                    }
+                }
+            } catch (e) {
+                allAccounts = [];
+            }
+        }
+
+        function saveAccounts() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allAccounts));
+        }
+
+        function loadSession() {
+            try {
+                const session = localStorage.getItem(SESSION_KEY);
+                if (session) {
+                    const data = JSON.parse(session);
+                    const account = allAccounts.find(a => a.id === data.id);
+                    if (account) {
+                        loginUser(account);
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        function saveSession() {
+            if (currentUser) {
+                localStorage.setItem(SESSION_KEY, JSON.stringify({ id: currentUser.id }));
+            } else {
+                localStorage.removeItem(SESSION_KEY);
+            }
+        }
+
+        // ===== INIT =====
+        loadAccounts();
+
+        // ===== DOM REFS =====
+        const connectBtn = document.getElementById('connectBtn');
+        const connectLabel = document.getElementById('connectLabel');
+        const triggerZone = document.getElementById('triggerZone');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const downloadSpeed = document.getElementById('downloadSpeed');
+        const uploadSpeed = document.getElementById('uploadSpeed');
+        const pingDisplay = document.getElementById('pingDisplay');
+        const headerTitle = document.getElementById('headerTitle');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        const serverBtn = document.getElementById('serverBtn');
+        const serverDropdown = document.getElementById('serverDropdown');
+        const serverOptions = document.querySelectorAll('.server-option');
+        const serverFlag = document.getElementById('serverFlag');
+        const serverName = document.getElementById('serverName');
+        const serverPing = document.getElementById('serverPing');
+
+        const authModal = document.getElementById('authModal');
+        const authModalClose = document.getElementById('authModalClose');
+        const registerForm = document.getElementById('registerForm');
+        const loginForm = document.getElementById('loginForm');
+        const toggleLoginBtn = document.getElementById('toggleLoginBtn');
+        const toggleRegisterBtn = document.getElementById('toggleRegisterBtn');
+        const regNick = document.getElementById('regNick');
+        const regId = document.getElementById('regId');
+        const regBirthday = document.getElementById('regBirthday');
+        const regPassword = document.getElementById('regPassword');
+        const registerBtn = document.getElementById('registerBtn');
+        const regError = document.getElementById('regError');
+        const loginId = document.getElementById('loginId');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        const confirmOkBtn = document.getElementById('confirmOkBtn');
+        const confirmNick = document.getElementById('confirmNick');
+        const confirmId = document.getElementById('confirmId');
+        const confirmBirthday = document.getElementById('confirmBirthday');
+        const openAuthBtn = document.getElementById('openAuthBtn');
+
+        const profileLoggedOut = document.querySelector('.profile-logged-out');
+        const profileLoggedIn = document.querySelector('.profile-logged-in');
+        const profileId = document.getElementById('profileId');
+        const profileTariff = document.getElementById('profileTariff');
+        const profileName = document.getElementById('profileName');
+        const avatar = document.getElementById('avatar');
+        const avatarInput = document.getElementById('avatarInput');
+
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const screens = document.querySelectorAll('.screen');
+        const langMenu = document.getElementById('langMenu');
+        const langOptions = document.querySelectorAll('.lang-option');
+        const langDropdown = document.getElementById('langDropdown');
+
+        // ===== BACKGROUND PARTICLES =====
+        function createParticles() {
+            const container = document.getElementById('bgParticles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'bg-particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (8 + Math.random() * 12) + 's';
+                particle.style.animationDelay = (Math.random() * 10) + 's';
+                particle.style.width = (1 + Math.random() * 2) + 'px';
+                particle.style.height = particle.style.width;
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // ===== CONNECTION LOGIC =====
+        connectBtn.addEventListener('click', function() {
+            if (isConnecting) return;
+
+            if (!connected) {
+                // Connect
+                isConnecting = true;
+                connectBtn.classList.add('connecting');
+                connectBtn.classList.remove('connected');
+                connectLabel.textContent = 'Подключение...';
+                statusDisplay.textContent = '⏳ Подключение...';
+                statusDisplay.className = 'status-display';
+
+                setTimeout(function() {
+                    isConnecting = false;
+                    connected = true;
+                    connectBtn.classList.remove('connecting');
+                    connectBtn.classList.add('connected');
+                    triggerZone.classList.add('connected');
+                    connectLabel.textContent = 'Подключено';
+                    headerTitle.textContent = '✅ Подключено';
+                    statusDisplay.textContent = '✅ Подключено';
+                    statusDisplay.classList.add('connected');
+                    timerDisplay.classList.add('active');
+                    startTimer();
+                    startStats();
+                }, 1500);
+            } else {
+                // Disconnect
+                isConnecting = true;
+                connectBtn.classList.add('connecting');
+                connectLabel.textContent = 'Отключение...';
+
+                setTimeout(function() {
+                    isConnecting = false;
+                    connected = false;
+                    connectBtn.classList.remove('connecting', 'connected');
+                    triggerZone.classList.remove('connected');
+                    connectLabel.textContent = 'Нажмите для подключения';
+                    headerTitle.textContent = 'AM-AM VPN';
+                    statusDisplay.textContent = '🔒 Отключено';
+                    statusDisplay.classList.remove('connected');
+                    timerDisplay.classList.remove('active');
+                    stopTimer();
+                    stopStats();
+                }, 800);
+            }
+        });
+
+        // ===== TIMER =====
+        function startTimer() {
+            connectionSeconds = 0;
+            updateTimerDisplay();
+            connectionTimer = setInterval(function() {
+                connectionSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (connectionTimer) {
+                clearInterval(connectionTimer);
+                connectionTimer = null;
+            }
+            connectionSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            var h = Math.floor(connectionSeconds / 3600);
+            var m = Math.floor((connectionSeconds % 3600) / 60);
+            var s = connectionSeconds % 60;
+            timerDisplay.textContent =
+                String(h).padStart(2, '0') + ':' +
+                String(m).padStart(2, '0') + ':' +
+                String(s).padStart(2, '0');
+        }
+
+        // ===== STATS SIMULATION =====
+        function startStats() {
+            updateStats();
+            statsInterval = setInterval(updateStats, 2000);
+        }
+
+        function stopStats() {
+            if (statsInterval) {
+                clearInterval(statsInterval);
+                statsInterval = null;
+            }
+            downloadSpeed.textContent = '0 MB/s';
+            uploadSpeed.textContent = '0 MB/s';
+            pingDisplay.textContent = '-- ms';
+        }
+
+        function updateStats() {
+            if (!connected) return;
+            var dl = (Math.random() * 45 + 5).toFixed(1);
+            var ul = (Math.random() * 15 + 1).toFixed(1);
+            var basePing = parseInt(document.querySelector('.server-option.selected')?.getAttribute('data-ping') || '50');
+            var ping = basePing + Math.floor(Math.random() * 20 - 10);
+            downloadSpeed.textContent = dl + ' MB/s';
+            uploadSpeed.textContent = ul + ' MB/s';
+            pingDisplay.textContent = Math.max(1, ping) + ' ms';
+        }
+
+        // ===== SERVER SELECTOR =====
+        serverBtn.addEventListener('click', function() {
+            serverDropdown.classList.toggle('show');
+        });
+
+        serverOptions.forEach(function(option) {
+            option.addEventListener('click', function() {
+                serverOptions.forEach(function(o) { o.classList.remove('selected'); });
+                option.classList.add('selected');
+                serverFlag.textContent = option.getAttribute('data-flag');
+                serverName.textContent = option.querySelector('.server-option-name').textContent;
+                serverPing.textContent = option.getAttribute('data-ping') + ' ms';
+                serverDropdown.classList.remove('show');
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!serverBtn.contains(e.target) && !serverDropdown.contains(e.target)) {
+                serverDropdown.classList.remove('show');
+            }
+        });
+
+        // ===== AUTH =====
+        openAuthBtn.addEventListener('click', function() {
+            authModal.classList.add('active');
+            registerForm.style.display = 'block';
+            loginForm.style.display = 'none';
+            clearAuthForms();
+        });
+
+        authModalClose.addEventListener('click', function() {
+            authModal.classList.remove('active');
+        });
+
+        toggleLoginBtn.addEventListener('click', function() {
+            registerForm.style.display = 'none';
+            loginForm.style.display = 'block';
+            clearAuthForms();
+        });
+
+        toggleRegisterBtn.addEventListener('click', function() {
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+            clearAuthForms();
+        });
+
+        function clearAuthForms() {
+            regError.style.display = 'none';
+            loginError.style.display = 'none';
+        }
+
+        registerBtn.addEventListener('click', function() {
+            var nick = regNick.value.trim();
+            var id = regId.value.trim();
+            var birthday = regBirthday.value;
+            var password = regPassword.value;
+
+            regError.style.display = 'none';
+
+            if (!nick || !id || !birthday || !password) {
+                regError.textContent = 'Заполните все поля';
+                regError.style.display = 'block';
+                return;
+            }
+
+            if (id.length !== 8 || !/^\d+$/.test(id)) {
+                regError.textContent = 'ID должен состоять из 8 цифр';
+                regError.style.display = 'block';
+                return;
+            }
+
+            if (password.length < 6) {
+                regError.textContent = 'Пароль минимум 6 символов';
+                regError.style.display = 'block';
+                return;
+            }
+
+            var birthDate = new Date(birthday);
+            if (birthDate >= new Date()) {
+                regError.textContent = 'Дата рождения не может быть в будущем';
+                regError.style.display = 'block';
+                return;
+            }
+
+            if (allAccounts.some(function(acc) { return acc.id === id; })) {
+                regError.textContent = 'ID уже зарегистрирован';
+                regError.style.display = 'block';
+                return;
+            }
+
+            confirmNick.textContent = nick;
+            confirmId.textContent = id;
+            confirmBirthday.textContent = birthday;
+
+            authModal.classList.remove('active');
+            confirmModal.classList.add('active');
+
+            confirmOkBtn.onclick = async function() {
+                var hashedPassword = await hashPassword(password);
+                var newAccount = {
+                    nick: nick,
+                    id: id,
+                    birthday: birthday,
+                    password: hashedPassword,
+                    tariff: 'free',
+                    tariff_expires: null,
+                    created_at: new Date().toISOString()
+                };
+                allAccounts.push(newAccount);
+                saveAccounts();
+
+                confirmModal.classList.remove('active');
+                loginUser(newAccount);
+            };
+        });
+
+        confirmCancelBtn.addEventListener('click', function() {
+            confirmModal.classList.remove('active');
+            authModal.classList.add('active');
+        });
+
+        loginBtn.addEventListener('click', async function() {
+            var id = loginId.value.trim();
+            var password = loginPassword.value;
+
+            loginError.style.display = 'none';
+
+            if (!id || !password) {
+                loginError.textContent = 'Введите ID и пароль';
+                loginError.style.display = 'block';
+                return;
+            }
+
+            var hashedPassword = await hashPassword(password);
+            var account = allAccounts.find(function(acc) {
+                return acc.id === id && acc.password === hashedPassword;
+            });
+
+            if (account) {
+                authModal.classList.remove('active');
+                loginUser(account);
+            } else {
+                loginError.textContent = 'Неверный ID или пароль';
+                loginError.style.display = 'block';
+            }
+        });
+
+        function loginUser(account) {
+            currentUser = account;
+            isLoggedIn = true;
+            profileLoggedOut.classList.remove('show');
+            profileLoggedIn.classList.add('show');
+            logoutBtn.classList.add('show');
+            profileId.textContent = 'ID: ' + account.id;
+            profileName.value = account.nick;
+            updateTariffDisplay();
+            saveSession();
+        }
+
+        logoutBtn.addEventListener('click', function() {
+            isLoggedIn = false;
+            currentUser = null;
+            profileLoggedOut.classList.add('show');
+            profileLoggedIn.classList.remove('show');
+            logoutBtn.classList.remove('show');
+            saveSession();
+
+            if (connected) {
+                connected = false;
+                isConnecting = false;
+                connectBtn.classList.remove('connecting', 'connected');
+                triggerZone.classList.remove('connected');
+                connectLabel.textContent = 'Нажмите для подключения';
+                headerTitle.textContent = 'AM-AM VPN';
+                statusDisplay.textContent = '🔒 Отключено';
+                statusDisplay.classList.remove('connected');
+                timerDisplay.classList.remove('active');
+                stopTimer();
+                stopStats();
+            }
+        });
+
+        function updateTariffDisplay() {
+            if (currentUser) {
+                var tariff = currentUser.tariff || 'free';
+                var expires = currentUser.tariff_expires;
+                var text = '💳 Тариф: ' + (tariff === 'premium' ? 'Premium' : 'Free');
+                if (expires) {
+                    text += ' (до ' + expires.slice(0, 10) + ')';
+                }
+                profileTariff.textContent = text;
+            }
+        }
+
+        // ===== LANGUAGE =====
+        langDropdown.addEventListener('click', function(e) {
+            if (!e.target.closest('.lang-menu')) {
+                langMenu.classList.toggle('show');
+            }
+        });
+
+        langOptions.forEach(function(option) {
+            option.addEventListener('click', function() {
+                langOptions.forEach(function(o) { o.classList.remove('active'); });
+                option.classList.add('active');
+                document.getElementById('langValue').textContent = option.querySelector('.lang-name').textContent;
+                langMenu.classList.remove('show');
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!langDropdown.contains(e.target)) {
+                langMenu.classList.remove('show');
+            }
+        });
+
+        // ===== NAVIGATION =====
+        navBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                navBtns.forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                screens.forEach(function(s) { s.classList.remove('active'); });
+                document.getElementById(btn.getAttribute('data-screen')).classList.add('active');
+            });
+        });
+
+        // ===== AVATAR =====
+        avatarInput.addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                if (!file.type.startsWith('image/')) {
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    return;
+                }
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    avatar.innerHTML = '';
+                    var img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.alt = 'Avatar';
+                    avatar.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        avatar.addEventListener('click', function() {
+            avatarInput.click();
+        });
+
+        // ===== RESTORE SESSION =====
+        loadSession();
+    </script>
+</body>
+</html>
