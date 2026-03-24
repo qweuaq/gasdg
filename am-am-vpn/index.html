@@ -1387,12 +1387,26 @@
         let connectionSeconds = 0;
         let statsInterval = null;
 
+        // ===== HASHING =====
+        async function hashPassword(password) {
+            var encoder = new TextEncoder();
+            var data = encoder.encode(password);
+            var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            var hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+        }
+
         // ===== STORAGE =====
         function loadAccounts() {
             try {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
-                    allAccounts = JSON.parse(stored);
+                    var parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed)) {
+                        allAccounts = parsed.filter(function(acc) {
+                            return acc && typeof acc.id === 'string' && typeof acc.nick === 'string';
+                        });
+                    }
                 }
             } catch (e) {
                 allAccounts = [];
@@ -1684,6 +1698,13 @@
                 return;
             }
 
+            var birthDate = new Date(birthday);
+            if (birthDate >= new Date()) {
+                regError.textContent = 'Дата рождения не может быть в будущем';
+                regError.style.display = 'block';
+                return;
+            }
+
             if (allAccounts.some(function(acc) { return acc.id === id; })) {
                 regError.textContent = 'ID уже зарегистрирован';
                 regError.style.display = 'block';
@@ -1697,12 +1718,13 @@
             authModal.classList.remove('active');
             confirmModal.classList.add('active');
 
-            confirmOkBtn.onclick = function() {
+            confirmOkBtn.onclick = async function() {
+                var hashedPassword = await hashPassword(password);
                 var newAccount = {
                     nick: nick,
                     id: id,
                     birthday: birthday,
-                    password: password,
+                    password: hashedPassword,
                     tariff: 'free',
                     tariff_expires: null,
                     created_at: new Date().toISOString()
@@ -1720,7 +1742,7 @@
             authModal.classList.add('active');
         });
 
-        loginBtn.addEventListener('click', function() {
+        loginBtn.addEventListener('click', async function() {
             var id = loginId.value.trim();
             var password = loginPassword.value;
 
@@ -1732,8 +1754,9 @@
                 return;
             }
 
+            var hashedPassword = await hashPassword(password);
             var account = allAccounts.find(function(acc) {
-                return acc.id === id && acc.password === password;
+                return acc.id === id && acc.password === hashedPassword;
             });
 
             if (account) {
@@ -1828,6 +1851,12 @@
         avatarInput.addEventListener('change', function(e) {
             var file = e.target.files[0];
             if (file) {
+                if (!file.type.startsWith('image/')) {
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    return;
+                }
                 var reader = new FileReader();
                 reader.onload = function(event) {
                     avatar.innerHTML = '';
