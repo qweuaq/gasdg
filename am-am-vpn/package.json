@@ -1,37 +1,26 @@
 {
   "name": "am-am-vpn",
-  "version": "1.0.0",
-  "description": "AM-AM VPN — десктопное VPN-приложение",
-  "main": "main.js",
+  "version": "2.0.0",
+  "description": "AM-AM VPN — modern desktop VPN client powered by Tauri + React + Xray-core",
+  "type": "module",
   "scripts": {
-    "start": "electron .",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "lint": "eslint src --ext .ts,.tsx"
   },
-  "build": {
-    "appId": "com.amam.vpn",
-    "productName": "AM-AM VPN",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "index.html"
-    ],
-    "win": {
-      "target": "nsis"
-    },
-    "mac": {
-      "target": "dmg"
-    },
-    "linux": {
-      "target": "AppImage"
-    }
+  "dependencies": {
+    "@tauri-apps/api": "^2.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "electron": "^35.0.0",
-    "electron-builder": "^26.0.0"
+    "@tauri-apps/cli": "^2.5.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
   }
 }

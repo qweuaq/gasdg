@@ -1,67 +1,136 @@
-# AM-AM VPN
+# Am-Am VPN
 
-Десктопное VPN-приложение на **Electron**. Запускается как обычная программа на Windows, macOS и Linux.
+Modern desktop VPN client built with **Tauri + React + Rust**, powered by **Xray-core**.
 
-## 🚀 Запуск
+## Architecture
 
-### 1. Установить зависимости
+```
+┌──────────────────────────────────┐
+│   UI Layer (React + TypeScript)  │
+│  components / hooks / services   │
+├──────────────────────────────────┤
+│         Tauri IPC Bridge         │
+├──────────────────────────────────┤
+│    Backend Layer (Rust)          │
+│  commands / state / storage      │
+├──────────────────────────────────┤
+│    Core Engine (Xray-core)       │
+│  config / process / proxy        │
+└──────────────────────────────────┘
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js** 18+ — [download](https://nodejs.org/)
+- **Rust** 1.70+ — [install](https://rustup.rs/)
+- **Tauri prerequisites** — [platform-specific setup](https://tauri.app/v1/guides/getting-started/prerequisites)
+
+### Development
 
 ```bash
 cd am-am-vpn
 npm install
+npm run tauri dev
 ```
 
-### 2. Запустить приложение
+### Build
 
 ```bash
-npm start
+npm run tauri build
 ```
 
-Откроется отдельное окно приложения AM-AM VPN.
+Installers will be generated in `am-am-vpn/src-tauri/target/release/bundle/`.
 
-### 3. Собрать установщик (опционально)
+## 📱 Features
 
-```bash
-# Windows (.exe)
-npm run build:win
+- **Subscription import** — paste a subscription URL and fetch server list
+- **Protocol support** — VMess, VLESS, Trojan, Shadowsocks
+- **Base64 / JSON subscription parsing**
+- **Server list** with latency testing
+- **One-click connect / disconnect** with animated status
+- **Auto-select fastest server**
+- **System proxy** (HTTP + SOCKS5) configuration
+- **TUN mode** support
+- **DNS routing** and leak protection
+- **Encrypted config storage** (AES-256-GCM)
+- **Real-time logs**
+- **Auto-subscription refresh**
 
-# macOS (.dmg)
-npm run build:mac
-
-# Linux (.AppImage)
-npm run build:linux
-```
-
-Готовые файлы появятся в папке `am-am-vpn/dist/`.
-
-## 📱 Возможности
-
-- **Подключение / Отключение** — анимированная кнопка с индикацией состояния
-- **Выбор сервера** — 6 серверов (Берлин, Амстердам, Нью-Йорк, Токио, Лондон, Сингапур) с индикацией пинга
-- **Статистика** — скорость загрузки/отдачи, пинг, таймер подключения
-- **Фильтры сайтов** — YouTube, Discord, Instagram, Twitter/X
-- **Настройки безопасности** — Kill Switch, DNS защита, блокировка рекламы
-- **Профиль пользователя** — регистрация, вход, аватар, выбор языка
-- **Сохранение сессии** — данные аккаунта сохраняются локально
-
-## 📁 Структура
+## 📁 Project Structure
 
 ```
 am-am-vpn/
-├── package.json        — зависимости и скрипты сборки
-├── main.js             — главный процесс Electron (окно приложения)
-├── preload.js          — безопасный мост между Node.js и UI
-├── index.html          — интерфейс приложения (HTML + CSS + JS)
-└── .gitignore          — исключения для node_modules и dist
+├── index.html                    — Vite entry point
+├── package.json                  — Frontend dependencies
+├── vite.config.ts                — Vite configuration
+├── tsconfig.json                 — TypeScript config
+├── src/                          — React UI
+│   ├── main.tsx                  — App entry
+│   ├── App.tsx                   — Root component
+│   ├── App.css                   — Styles
+│   ├── components/
+│   │   ├── SubscriptionInput.tsx — URL input
+│   │   ├── ServerList.tsx        — Server list with latency
+│   │   ├── ConnectionButton.tsx  — Connect/disconnect
+│   │   ├── StatusBar.tsx         — Connection status
+│   │   └── LogViewer.tsx         — Log panel
+│   ├── hooks/
+│   │   ├── useConnection.ts      — Connection state hook
+│   │   └── useServers.ts         — Server/subscription hook
+│   ├── services/
+│   │   └── api.ts                — Tauri invoke wrappers
+│   └── types/
+│       └── index.ts              — Shared TypeScript types
+└── src-tauri/                    — Rust backend
+    ├── Cargo.toml
+    ├── tauri.conf.json
+    ├── build.rs
+    └── src/
+        ├── main.rs               — Entry point
+        ├── lib.rs                — Tauri app setup
+        ├── state.rs              — Shared app state
+        ├── commands/             — Tauri IPC handlers
+        │   ├── connection.rs     — connect / disconnect
+        │   ├── subscription.rs   — add / refresh / remove
+        │   └── server.rs         — list / latency test
+        ├── core/                 — Xray-core integration
+        │   ├── config.rs         — JSON config generation
+        │   ├── process.rs        — Process lifecycle
+        │   └── xray.rs           — High-level engine
+        ├── subscription/         — URL parsing
+        │   ├── parser.rs         — Fetch & parse
+        │   └── protocols.rs      — VMess/VLESS/Trojan/SS
+        ├── proxy/
+        │   └── system_proxy.rs   — OS proxy settings
+        ├── storage/
+        │   └── encrypted.rs      — AES-256-GCM storage
+        └── models/
+            └── server.rs         — Data structures
 ```
 
-## 🛠 Технологии
+## 🛠 Technologies
 
-- **Electron** — десктопное приложение
-- HTML5 / CSS3 / JavaScript — интерфейс
-- electron-builder — сборка установщиков (.exe, .dmg, .AppImage)
+| Layer    | Technology        |
+| -------- | ----------------- |
+| UI       | React + TypeScript |
+| Desktop  | Tauri v2          |
+| Backend  | Rust              |
+| Core     | Xray-core         |
+| Build    | Vite              |
 
-## 💻 Требования
+## 🔒 Security
 
-- **Node.js** 18+ — [скачать](https://nodejs.org/)
-- **npm** (идёт вместе с Node.js)
+- Core process runs sandboxed with `kill_on_drop`
+- Configuration data encrypted with AES-256-GCM
+- Subscription URLs stored in encrypted storage
+- CSP headers configured in Tauri
+- Context isolation between UI and backend
+
+## 🔌 Extensibility
+
+The modular architecture allows:
+- Adding **sing-box** as an alternative core engine
+- Plugin system via the command interface
+- External API for automation

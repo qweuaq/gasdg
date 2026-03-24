@@ -1,0 +1,31 @@
+[package]
+name = "am-am-vpn"
+version = "2.0.0"
+edition = "2021"
+description = "Am-AmVPN — modern VPN client powered by Xray-core"
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4"] }
+base64 = "0.22"
+reqwest = { version = "0.12", features = ["json"] }
+url = "2"
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+env_logger = "0.11"
+aes-gcm = "0.10"
+rand = "0.8"
+sha2 = "0.10"
+dirs = "6"
+thiserror = "2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
