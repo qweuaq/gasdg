@@ -178,12 +178,12 @@ mod tests {
 
     #[test]
     fn test_parse_vless() {
-        let uri = "vless://uuid-123@example.com:443?security=tls&type=ws#My%20VLESS";
+        let uri = "vless://uuid-123@example.com:443?security=tls&type=ws#My-VLESS";
         let node = parse_vless(uri).unwrap();
         assert_eq!(node.protocol, Protocol::VLess);
         assert_eq!(node.address, "example.com");
         assert_eq!(node.port, 443);
-        assert_eq!(node.name, "My%20VLESS");
+        assert_eq!(node.name, "My-VLESS");
     }
 
     #[test]

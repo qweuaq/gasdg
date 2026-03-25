@@ -125,26 +125,26 @@ fn extract_zip(data: &[u8], dest: &Path) -> Result<(), String> {
             .by_index(i)
             .map_err(|e| format!("ZIP entry error: {e}"))?;
 
-        let name = file.name().to_string();
-        // Only extract the xray binary and geodata files.
-        if name.contains('/') && !name.ends_with('/') {
-            continue; // skip nested directories
+        // Use only the file name component, ignoring any directory prefix.
+        // This flattens the archive contents into the destination directory.
+        let name = match std::path::Path::new(file.name()).file_name() {
+            Some(n) => n.to_string_lossy().to_string(),
+            None => continue,
+        };
+
+        if file.is_dir() {
+            continue;
         }
 
         let out_path = dest.join(&name);
-        if file.is_dir() {
-            std::fs::create_dir_all(&out_path)
-                .map_err(|e| format!("mkdir error: {e}"))?;
-        } else {
-            let mut buf = Vec::new();
-            file.read_to_end(&mut buf)
-                .map_err(|e| format!("ZIP read error: {e}"))?;
-            let mut out_file = std::fs::File::create(&out_path)
-                .map_err(|e| format!("File create error: {e}"))?;
-            out_file
-                .write_all(&buf)
-                .map_err(|e| format!("File write error: {e}"))?;
-        }
+        let mut buf = Vec::new();
+        file.read_to_end(&mut buf)
+            .map_err(|e| format!("ZIP read error: {e}"))?;
+        let mut out_file = std::fs::File::create(&out_path)
+            .map_err(|e| format!("File create error: {e}"))?;
+        out_file
+            .write_all(&buf)
+            .map_err(|e| format!("File write error: {e}"))?;
     }
     Ok(())
 }

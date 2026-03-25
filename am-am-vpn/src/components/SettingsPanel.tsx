@@ -35,9 +35,11 @@ export default function SettingsPanel({ open, onClose }: Props) {
     setSaving(true);
     try {
       await api.updateSettings(settings);
+      onClose();
+    } catch {
+      /* keep panel open so user can retry */
     } finally {
       setSaving(false);
-      onClose();
     }
   };
 

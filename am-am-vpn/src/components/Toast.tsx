@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -8,7 +8,6 @@ interface ToastItem {
   message: string;
 }
 
-let nextId = 0;
 let addToastGlobal: ((type: ToastType, message: string) => void) | null = null;
 
 /** Show a toast notification from anywhere. */
@@ -18,9 +17,10 @@ export function showToast(type: ToastType, message: string) {
 
 export default function ToastContainer() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const nextId = useRef(0);
 
   const addToast = useCallback((type: ToastType, message: string) => {
-    const id = nextId++;
+    const id = nextId.current++;
     setToasts((prev) => [...prev, { id, type, message }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
