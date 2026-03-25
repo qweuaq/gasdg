@@ -36,9 +36,7 @@
     ],
     "windows": {
       "nsis": {
-        "oneClick": false,
         "installMode": "perMachine",
-        "allowDowngrades": true,
         "displayLanguageSelector": true,
         "languages": ["Russian", "English"],
         "startMenuFolder": "Am-Am VPN"
