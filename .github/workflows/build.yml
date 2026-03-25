@@ -81,45 +81,40 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ""
 
       # Upload platform-specific artifacts
-      - name: Upload Windows installer (EXE)
+      - name: Upload Windows installer (EXE — NSIS)
         if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: am-am-vpn-windows-exe
-          path: |
-            am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+          name: windows-nsis-installer
+          path: am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
 
       - name: Upload Windows installer (MSI)
         if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: am-am-vpn-windows-msi
-          path: |
-            am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
+          name: windows-msi-installer
+          path: am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
 
       - name: Upload macOS installer (DMG)
         if: matrix.platform == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: am-am-vpn-macos-${{ matrix.target }}
-          path: |
-            am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+          name: macos-dmg-${{ matrix.target }}
+          path: am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
 
       - name: Upload Linux installer (AppImage)
         if: matrix.platform == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
         with:
-          name: am-am-vpn-linux-appimage
-          path: |
-            am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
+          name: linux-appimage
+          path: am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
 
       - name: Upload Linux installer (deb)
         if: matrix.platform == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
         with:
-          name: am-am-vpn-linux-deb
-          path: |
-            am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
+          name: linux-deb
+          path: am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
 
   # Create GitHub Release when a tag is pushed
   release:
@@ -131,10 +126,29 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          merge-multiple: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          draft: true
+          draft: false
           generate_release_notes: true
+          name: "Am-Am VPN ${{ github.ref_name }}"
+          body: |
+            ## 📦 Скачать установщик / Download Installer
+
+            | Платформа | Файл |
+            |-----------|------|
+            | 🪟 Windows (EXE) | `Am-Am-VPN_*_x64-setup.exe` |
+            | 🪟 Windows (MSI) | `Am-Am-VPN_*_x64_en-US.msi` |
+            | 🍎 macOS (Apple Silicon) | `Am-Am-VPN_*_aarch64.dmg` |
+            | 🍎 macOS (Intel) | `Am-Am-VPN_*_x64.dmg` |
+            | 🐧 Linux (AppImage) | `Am-Am-VPN_*_amd64.AppImage` |
+            | 🐧 Linux (deb) | `Am-Am-VPN_*_amd64.deb` |
+
+            ### Установка на Windows
+            1. Скачайте `.exe` файл ниже
+            2. Запустите установщик
+            3. Следуйте инструкциям мастера установки (Далее → Далее → Установить)
+            4. Готово! Запустите Am-Am VPN из меню Пуск
           files: artifacts/**/*
