@@ -22,6 +22,8 @@ rand = "0.8"
 sha2 = "0.10"
 dirs = "6"
 thiserror = "2"
+zip = "2"
+hostname = "0.4"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
