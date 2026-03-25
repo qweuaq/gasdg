@@ -36,12 +36,21 @@
     ],
     "windows": {
       "nsis": {
+        "oneClick": false,
         "installMode": "perMachine",
-        "displayLanguageSelector": false
+        "allowDowngrades": true,
+        "displayLanguageSelector": true,
+        "languages": ["Russian", "English"],
+        "startMenuFolder": "Am-Am VPN"
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
       }
     },
     "category": "Utility",
+    "publisher": "Am-Am VPN",
     "shortDescription": "Modern VPN client powered by Xray-core",
-    "longDescription": "Am-Am VPN is a modern desktop VPN client built with Tauri, React, and Rust. It supports VMess, VLESS, Trojan, and Shadowsocks protocols with subscription management, latency testing, and system proxy configuration."
+    "longDescription": "Am-Am VPN is a modern desktop VPN client built with Tauri, React, and Rust. It supports VMess, VLESS, Trojan, and Shadowsocks protocols with subscription management, latency testing, and system proxy configuration.",
+    "copyright": "© 2024-2026 Am-Am VPN"
   }
 }

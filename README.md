@@ -2,6 +2,31 @@
 
 Modern desktop VPN client built with **Tauri + React + Rust**, powered by **Xray-core**.
 
+## 📥 Скачать установщик / Download Installer
+
+> **Никакой установки Node.js, npm или терминала не нужно — просто скачай и запусти!**
+
+Готовые установщики доступны на странице **[Releases](../../releases)**:
+
+| Платформа | Формат | Файл |
+|-----------|--------|------|
+| 🪟 **Windows** | EXE установщик (NSIS) | `Am-Am-VPN_x.x.x_x64-setup.exe` |
+| 🪟 **Windows** | MSI установщик | `Am-Am-VPN_x.x.x_x64_en-US.msi` |
+| 🍎 **macOS** (Apple Silicon) | DMG | `Am-Am-VPN_x.x.x_aarch64.dmg` |
+| 🍎 **macOS** (Intel) | DMG | `Am-Am-VPN_x.x.x_x64.dmg` |
+| 🐧 **Linux** | AppImage | `Am-Am-VPN_x.x.x_amd64.AppImage` |
+| 🐧 **Linux** | deb пакет | `Am-Am-VPN_x.x.x_amd64.deb` |
+
+### 🪟 Установка на Windows
+
+1. Скачайте файл `Am-Am-VPN_x.x.x_x64-setup.exe` со страницы [Releases](../../releases)
+2. Запустите скачанный `.exe` файл
+3. Выберите язык установки (Русский / English)
+4. Следуйте мастеру установки: **Далее → Выбор папки → Установить**
+5. Готово! Запустите **Am-Am VPN** из меню Пуск или с ярлыка на рабочем столе
+
+> Установщик включает стандартный мастер установки Windows (NSIS) с выбором папки, ярлыками в Пуск и на рабочем столе, а также корректным деинсталлятором через «Установка и удаление программ».
+
 ## Architecture
 
 ```
@@ -18,21 +43,6 @@ Modern desktop VPN client built with **Tauri + React + Rust**, powered by **Xray
 │  config / process / proxy        │
 └──────────────────────────────────┘
 ```
-
-## 📥 Download Installers
-
-Pre-built installers are available from the [Releases](../../releases) page:
-
-| Platform | Format | File |
-|----------|--------|------|
-| **Windows** | EXE installer (NSIS) | `Am-Am-VPN_x.x.x_x64-setup.exe` |
-| **Windows** | MSI installer | `Am-Am-VPN_x.x.x_x64_en-US.msi` |
-| **macOS** (Apple Silicon) | DMG | `Am-Am-VPN_x.x.x_aarch64.dmg` |
-| **macOS** (Intel) | DMG | `Am-Am-VPN_x.x.x_x64.dmg` |
-| **Linux** | AppImage | `Am-Am-VPN_x.x.x_amd64.AppImage` |
-| **Linux** | deb package | `Am-Am-VPN_x.x.x_amd64.deb` |
-
-> No `npm install` or build tools required — just download and run!
 
 ## 🚀 Getting Started (Development)
 
