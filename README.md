@@ -19,7 +19,22 @@ Modern desktop VPN client built with **Tauri + React + Rust**, powered by **Xray
 └──────────────────────────────────┘
 ```
 
-## 🚀 Getting Started
+## 📥 Download Installers
+
+Pre-built installers are available from the [Releases](../../releases) page:
+
+| Platform | Format | File |
+|----------|--------|------|
+| **Windows** | EXE installer (NSIS) | `Am-Am-VPN_x.x.x_x64-setup.exe` |
+| **Windows** | MSI installer | `Am-Am-VPN_x.x.x_x64_en-US.msi` |
+| **macOS** (Apple Silicon) | DMG | `Am-Am-VPN_x.x.x_aarch64.dmg` |
+| **macOS** (Intel) | DMG | `Am-Am-VPN_x.x.x_x64.dmg` |
+| **Linux** | AppImage | `Am-Am-VPN_x.x.x_amd64.AppImage` |
+| **Linux** | deb package | `Am-Am-VPN_x.x.x_amd64.deb` |
+
+> No `npm install` or build tools required — just download and run!
+
+## 🚀 Getting Started (Development)
 
 ### Prerequisites
 
@@ -35,13 +50,22 @@ npm install
 npm run tauri dev
 ```
 
-### Build
+### Build Installers Locally
 
 ```bash
+cd am-am-vpn
+npm install
 npm run tauri build
 ```
 
-Installers will be generated in `am-am-vpn/src-tauri/target/release/bundle/`.
+Installers will be generated in `am-am-vpn/src-tauri/target/release/bundle/`:
+- **Windows**: `bundle/nsis/*.exe` and `bundle/msi/*.msi`
+- **macOS**: `bundle/dmg/*.dmg`
+- **Linux**: `bundle/appimage/*.AppImage` and `bundle/deb/*.deb`
+
+### CI/CD
+
+The project includes a GitHub Actions workflow (`.github/workflows/build.yml`) that automatically builds installers for all platforms on every push to `main` or when a version tag (`v*`) is pushed. Tagged releases automatically create a GitHub Release with all installer artifacts.
 
 ## 📱 Features
 
