@@ -116,10 +116,10 @@ jobs:
           name: linux-deb
           path: am-am-vpn/src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
 
-  # Create GitHub Release when a tag is pushed
+  # Create GitHub Release on every push to main or when a v* tag is pushed
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -128,7 +128,12 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Create GitHub Release
+      - name: List downloaded artifacts
+        run: find artifacts -type f | head -50
+
+      # Release for v* tags — versioned release
+      - name: Create versioned GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           draft: false
@@ -151,4 +156,35 @@ jobs:
             2. Запустите установщик
             3. Следуйте инструкциям мастера установки (Далее → Далее → Установить)
             4. Готово! Запустите Am-Am VPN из меню Пуск
+          files: artifacts/**/*
+
+      # Release for main branch — always-updated "latest" release
+      - name: Create/update latest GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Am-Am VPN — Последняя сборка / Latest Build"
+          draft: false
+          prerelease: false
+          make_latest: true
+          body: |
+            ## 📦 Скачать установщик / Download Installer
+
+            Эта сборка обновляется автоматически при каждом изменении.
+
+            | Платформа | Файл |
+            |-----------|------|
+            | 🪟 **Windows (EXE)** | `Am-Am-VPN_*_x64-setup.exe` |
+            | 🪟 **Windows (MSI)** | `Am-Am-VPN_*_x64_en-US.msi` |
+            | 🍎 **macOS (Apple Silicon)** | `Am-Am-VPN_*_aarch64.dmg` |
+            | 🍎 **macOS (Intel)** | `Am-Am-VPN_*_x64.dmg` |
+            | 🐧 **Linux (AppImage)** | `Am-Am-VPN_*_amd64.AppImage` |
+            | 🐧 **Linux (deb)** | `Am-Am-VPN_*_amd64.deb` |
+
+            ### 🪟 Установка на Windows
+            1. Скачайте файл `Am-Am-VPN_*_x64-setup.exe` ниже
+            2. Запустите скачанный `.exe` файл
+            3. Следуйте инструкциям мастера установки (Далее → Далее → Установить)
+            4. Готово! Запустите **Am-Am VPN** из меню Пуск или с рабочего стола
           files: artifacts/**/*
