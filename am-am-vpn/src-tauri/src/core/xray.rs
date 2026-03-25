@@ -4,7 +4,6 @@ use std::path::PathBuf;
 
 use crate::models::{AppSettings, ServerNode};
 use super::config::build_xray_config;
-use super::download;
 use super::process::XrayProcess;
 
 /// Main Xray engine combining configuration generation with process lifecycle.
@@ -49,11 +48,6 @@ impl XrayEngine {
         self.xray_binary().exists()
     }
 
-    /// Download Xray-core if not already present.
-    pub async fn ensure_core(&self) -> Result<PathBuf, String> {
-        download::ensure_xray_core(&self.core_dir()).await
-    }
-
     /// Write the JSON config for the selected server and start the process.
     pub async fn connect(
         &mut self,
@@ -61,13 +55,6 @@ impl XrayEngine {
         settings: &AppSettings,
     ) -> Result<(), String> {
         self.ensure_dirs()?;
-
-        // Ensure the Xray binary is present (auto-download if needed).
-        let bin = if self.is_core_available() {
-            self.xray_binary()
-        } else {
-            self.ensure_core().await?
-        };
 
         // Build and write config.
         let config = build_xray_config(server, settings);
@@ -78,7 +65,7 @@ impl XrayEngine {
 
         // Start process.
         let mut proc = XrayProcess::new(self.config_path());
-        proc.start(&bin).await?;
+        proc.start(&self.xray_binary()).await?;
         self.process = Some(proc);
         Ok(())
     }

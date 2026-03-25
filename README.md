@@ -99,9 +99,7 @@ am-am-vpn/
 │   │   ├── ServerList.tsx        — Server list with latency
 │   │   ├── ConnectionButton.tsx  — Connect/disconnect
 │   │   ├── StatusBar.tsx         — Connection status
-│   │   ├── LogViewer.tsx         — Log panel
-│   │   ├── SettingsPanel.tsx     — Settings editor
-│   │   └── Toast.tsx             — Toast notifications
+│   │   └── LogViewer.tsx         — Log panel
 │   ├── hooks/
 │   │   ├── useConnection.ts      — Connection state hook
 │   │   └── useServers.ts         — Server/subscription hook
@@ -117,14 +115,12 @@ am-am-vpn/
         ├── main.rs               — Entry point
         ├── lib.rs                — Tauri app setup
         ├── state.rs              — Shared app state
-        ├── errors.rs             — Error types (thiserror)
         ├── commands/             — Tauri IPC handlers
-        │   ├── connection.rs     — connect / disconnect / failover
+        │   ├── connection.rs     — connect / disconnect
         │   ├── subscription.rs   — add / refresh / remove
         │   └── server.rs         — list / latency test
         ├── core/                 — Xray-core integration
         │   ├── config.rs         — JSON config generation
-        │   ├── download.rs       — Auto-download from GitHub
         │   ├── process.rs        — Process lifecycle
         │   └── xray.rs           — High-level engine
         ├── subscription/         — URL parsing
@@ -152,7 +148,6 @@ am-am-vpn/
 
 - Core process runs sandboxed with `kill_on_drop`
 - Configuration data encrypted with AES-256-GCM
-- Encryption key derived per-installation from hostname + data directory
 - Subscription URLs stored in encrypted storage
 - CSP headers configured in Tauri
 - Context isolation between UI and backend

@@ -15,19 +15,9 @@ pub struct AppState {
     pub storage: EncryptedStorage,
 }
 
-/// Derive a per-machine encryption passphrase from the hostname and data
-/// directory so that each installation gets a unique key.
-fn derive_passphrase(data_dir: &std::path::Path) -> String {
-    let host = hostname::get()
-        .map(|h| h.to_string_lossy().to_string())
-        .unwrap_or_else(|_| "am-am-vpn".to_string());
-    format!("am-am-vpn:{}:{}", host, data_dir.display())
-}
-
 impl AppState {
     pub fn new(data_dir: std::path::PathBuf) -> Self {
-        let passphrase = derive_passphrase(&data_dir);
-        let storage = EncryptedStorage::new(data_dir.join("encrypted"), &passphrase);
+        let storage = EncryptedStorage::new(data_dir.join("encrypted"), "am-am-vpn-default-key");
 
         // Try to load persisted subscriptions.
         let subscriptions = storage
@@ -51,11 +41,6 @@ impl AppState {
     /// Persist subscriptions to encrypted storage.
     pub fn persist_subscriptions(&self, subs: &[Subscription]) -> Result<(), String> {
         self.storage.write_json("subscriptions.enc", &subs)
-    }
-
-    /// Persist settings to encrypted storage.
-    pub fn persist_settings(&self, settings: &AppSettings) -> Result<(), String> {
-        self.storage.write_json("settings.enc", settings)
     }
 
     /// Push a log entry.

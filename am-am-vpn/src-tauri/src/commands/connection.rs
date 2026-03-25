@@ -75,16 +75,6 @@ pub async fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
 pub async fn get_connection_state(
     state: State<'_, AppState>,
 ) -> Result<ConnectionState, String> {
-    // Check if the core process is still alive (failover detection).
-    {
-        let mut engine = state.engine.lock().await;
-        let mut conn = state.connection.lock().await;
-        if conn.status == ConnectionStatus::Connected && !engine.is_connected() {
-            conn.status = ConnectionStatus::Error;
-            state.push_log("error", "Core process died unexpectedly");
-        }
-    }
-
     let conn = state.connection.lock().await;
     Ok(conn.clone())
 }
@@ -101,9 +91,7 @@ pub async fn update_settings(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let mut s = state.settings.lock().await;
-    *s = settings.clone();
-    drop(s);
-    state.persist_settings(&settings)?;
+    *s = settings;
     Ok(())
 }
 
