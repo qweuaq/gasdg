@@ -5,6 +5,7 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onTestAll: () => void;
+  onRemove?: (subscriptionId: string) => void;
 }
 
 function protocolBadge(proto: string) {
